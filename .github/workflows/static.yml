@@ -1,0 +1,68 @@
+# Workflow for generating PDF and HTML for asciidoc book
+name: Generate PDF+HTML from AsciiDoc and upload to GitHub Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["develop"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+      - name: asciidoctor-ghpages
+        # You may pin to the exact commit or the version.
+        # uses: manoelcampos/asciidoctor-ghpages-action@8223574813d20f9fa5ac3d8f55480b727a331d69
+        uses: manoelcampos/asciidoctor-ghpages-action@v2.2.4
+        continue-on-error: true # avoid pushing the built files to a branch 
+        with:
+          # Defines the source root directory from where AsciiDoc files will be built and other containing files will be published to gh-pages.
+          #source_dir: # optional, default is .
+          # Extra parameters to pass to the asciidoctor command to customize the process of building adoc files
+          #asciidoctor_params: # optional
+          # The extension you are using for your AsciiDoc Files
+          adoc_file_ext: .asciidoc # optional, default is .adoc
+          # Defines if a PDF ebook should be built along with the html files. That will generate an ebook.pdf file inside the gh-pages branch.
+          pdf_build: true # optional, default is false
+          # Defines the name of the main AsciiDoc file that will be used if you are generating an ebook in PDF or any other supported format. For instance, if the main ebook file is "ebook.adoc", just inform "ebook" here.
+          ebook_main_adoc_file: book # optional, default is README
+          # Defines if a slides.html file should be built using AsciiDoc Reveal.js. The slides.html file is generated inside the gh-pages branch.
+          #slides_build: # optional, default is false
+          # Defines the name of the main AsciiDoc file that will be used if you are generating slides with Reveal.js. For instance, if the slides file is "slides.adoc", just inform "slides" here.
+          #slides_main_adoc_file: # optional, default is README
+          # If slides are being generated using AsciiDoc Reveal.js, you may not want to build the regular html files using the asciidoctor command, but just using the asciidoctor-revealjs command. In order to generate only the slides.html instead of the regular html files, set this config to true.
+          #slides_skip_asciidoctor_build: # optional, default is false
+          # Any arbitrary shell command to be executed before the asciidoc build is started. Optional.
+          #pre_build: # optional, default is echo "No pre build command provided."
+          # Any arbitrary shell command to be executed after the asciidoc build is complete and before committing changes on gh-pages branch. Optional.
+          #post_build: # optional, default is echo "No post build command provided."
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # Upload entire repository
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
